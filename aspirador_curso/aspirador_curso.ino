@@ -2,6 +2,7 @@
 #include <SoftwareSerial.h> //biblioteca para configurar a comunicacao Serial
 #include <EEPROM.h> //biblioteca para armazenar dados na memória ROM
 #include <Coordinates.h>  //biblioteca para converter coordenadas
+#include <math.h>
 
 // ***** REFATORAR TUDO USANDO EEPROM.GET() E EEPROM.PUT() *****
 
@@ -82,10 +83,12 @@ void pipf(float x, float y){
   point.fromCartesian(dx,dy);
   float R = 10*point.getR();
   float alfa = point.getAngle();
+  alfa *= 57.2958;
+  //alfa = map(alfa,0.0,6.2832,0.0,360.0);
   float dAlfa = alfa-ang;
   R = (int) R;
   if(dAlfa > 0){
-    float graus = (dAlfa*4068.0)/71;
+    float graus = dAlfa;//(dAlfa*4068.0)/71;
     graus = (int) graus;
     esqAx(graus);
     frente(R);
@@ -95,7 +98,7 @@ void pipf(float x, float y){
     EEPROM.put(0,pos);
   }
   else if(dAlfa < 0){
-    float graus = (dAlfa*(-4068.0))/71;
+    float graus = dAlfa;//(dAlfa*(-4068.0))/71;
     graus = (int) graus;
     dirAx(graus);
     frente(R);
@@ -111,6 +114,15 @@ void pipf(float x, float y){
     pos.vA = alfa/10.0;
     EEPROM.put(0,pos);
   }
+  delay(1000);
+  Serial.println(xi);
+  Serial.println(yi);
+  Serial.println(ang);
+  Serial.println(R);
+  Serial.println(dAlfa);
+  
+  mover(0);
+  delay(1000);
   
 }
 void mover(int comando){
@@ -124,8 +136,8 @@ void mover(int comando){
     //Serial.println("frente");
     digitalWrite(mA1, HIGH);
     digitalWrite(mA2, LOW);
-    digitalWrite(mB1, LOW);
-    digitalWrite(mB2, HIGH);
+    digitalWrite(mB1, HIGH);
+    digitalWrite(mB2, LOW);
   }
   else if(comando == 2){
     //Serial.println("trás");
@@ -153,14 +165,15 @@ void mover(int comando){
 void encEsq(){
   Encoder encoder;
   EEPROM.get(3,encoder);
-  encoder.encEsq+=1.00;
-  //encoder.encDir+= 0.01;
+  //encoder.encEsq+=1.00;
+  encoder.encEsq+= 0.01;
   EEPROM.put(3,encoder);
+  Serial.println(encoder.encEsq);
 }
 void encDir(){
   Encoder encoder;
   EEPROM.get(3,encoder);
-  //encoder.encEsq+=1.00;
+  //encoder.encDir+=1.00;
   encoder.encDir+= 0.01;
   EEPROM.put(3,encoder);
 }
@@ -170,18 +183,24 @@ void esqAx(int graus){
    * AJUSTAR CONVERSÃO E ARMAZENAMENTO DE PULSOS
    * A EEPROM SÓ SALVA VALORES ENTRE 0 E 255
    */
+  Serial.println(graus);
+  delay(1000);
   Encoder encoder;
+  
   encoder.encEsq = 0;
   encoder.encDir = 0;
   EEPROM.put(3,encoder);
   //EEPROM.write(3,0);
   //EEPROM.write(4,0);
+  
   int setPoint = graus/3;
   EEPROM.get(3,encoder);
-  while(map(encoder.encEsq,0,0.92,0,360) <= setPoint || map(encoder.encDir,0,0.92,0,360)){
-    int s = int(Serial.parseInt(SKIP_WHITESPACE));
-    if(s == 9) break;
+  while(391.304*encoder.encEsq < setPoint || 391.304*encoder.encDir < setPoint){
+    //int s = int(Serial.parseInt(SKIP_WHITESPACE));
+    //if(s == 9) break;
+    //Serial.println(encoder.encEsq);
     mover(3);
+    
   }
   mover(0);
 }
@@ -198,8 +217,8 @@ void dirAx(int graus){
   int setPoint = graus/3;
   EEPROM.get(3,encoder);
   while(map(encoder.encDir,0,0.92,0,360) <= setPoint || map(encoder.encEsq,0,0.92,0,360)){
-    int s = int(Serial.parseInt(SKIP_WHITESPACE));
-    if(s == 9) break;
+    //int s = int(Serial.parseInt(SKIP_WHITESPACE));
+    //if(s == 9) break;
     mover(4);
   }
   mover(0);
@@ -215,8 +234,8 @@ void frente(int mm){
   int setPoint = mm/5;
   EEPROM.get(3,encoder);
   while(encoder.encEsq <= setPoint || encoder.encDir <= setPoint){
-    int s = int(Serial.parseInt(SKIP_WHITESPACE));
-    if(s == 9) break;
+    //int s = int(Serial.parseInt(SKIP_WHITESPACE));
+    //if(s == 9) break;
     digitalWrite(mA1, HIGH);
     digitalWrite(mA2, LOW);
     digitalWrite(mB1, LOW);
@@ -244,48 +263,25 @@ void setup() {
 }
 
 void loop() {
-  /*
-  Encoder ncd;
-  EEPROM.get(5,ncd);
-  Serial.println(ncd.encDir);
-  mover(1);
-  
-  int i = 5;
-  int caminho[] = {};
-  //delay(1000);
-  
-  while(Serial.available()){
-    long com = Serial.parseInt(SKIP_WHITESPACE);
-    int comando = int(com);
-    caminho[i] = comando;
-    frente(comando);
-    //mover(0);
-  }
-  rota(caminho,sizeof(caminho));
-  */
+  esqAx(90);
+  delay(5000);
+  dirAx(90);
   //int i = 5;
   //int caminho[] = {};
   //delay(1000);
-  //while(Serial.available()){
-  long com = Serial.parseInt(SKIP_WHITESPACE);
-  if(com > 0){
-    caminho[i] = float(com);
-    i++;
-  }
-  else{
-    i = 5;
-  }
-  Serial.println(com);
-  //}
-  rota(caminho,sizeof(caminho));
-  Posicao vert;
-  for(int ponto = 5; ponto <= sizeof(caminho); ponto++){
-    EEPROM.get(ponto,vert);
-    Serial.println(vert.vX);
-    Serial.println(vert.vY);
-    pipf(vert.vX,vert.vY);
-  }
+  /*
+  while(Serial.available()> 0){
+  double ab = Serial.parseInt(SKIP_WHITESPACE);
+  double ord = Serial.parseInt(SKIP_WHITESPACE);
+  ab = float(ab);
+  ord = float(ord);
+  Serial.println(ab);
+  Serial.println(ord);
+  delay(1000);
+  pipf(ab,ord); 
   
-  mover(0);
+  }
+  */  
+  //mover(0);
   
 }

@@ -50,6 +50,8 @@ SoftwareSerial BT(4,5);  //4 = RX e 5 = TX
 #define irEsq 2
 
 int mA1 = 9,mA2 = 10,mB1 = 11,mB2 = 12; //variáveis de controle dos motores
+float vEsq = 0.00;
+float vDir = 0.00;
 
 void rota(int coords[], int qt){        
   
@@ -143,34 +145,36 @@ void mover(int comando){
     //Serial.println("trás");
     digitalWrite(mA1, LOW);
     digitalWrite(mA2, HIGH);
-    digitalWrite(mB1, HIGH);
-    digitalWrite(mB2, LOW);
+    digitalWrite(mB1, LOW);
+    digitalWrite(mB2, HIGH);
   }
   else if(comando == 3){
     //Serial.println("esquerda");
     digitalWrite(mA1, HIGH);
     digitalWrite(mA2, LOW);
-    digitalWrite(mB1, HIGH);
-    digitalWrite(mB2, LOW);
+    digitalWrite(mB1, LOW);
+    digitalWrite(mB2, HIGH);
   }
   else if(comando == 4){
     //Serial.println("direita");
     digitalWrite(mA1, LOW);
     digitalWrite(mA2, HIGH);
-    digitalWrite(mB1, LOW);
-    digitalWrite(mB2, HIGH);
+    digitalWrite(mB1, HIGH);
+    digitalWrite(mB2, LOW);
   }
 }
 
 void encEsq(){
+  vEsq+= 0.01;
   Encoder encoder;
   EEPROM.get(3,encoder);
   //encoder.encEsq+=1.00;
   encoder.encEsq+= 0.01;
   EEPROM.put(3,encoder);
-  Serial.println(encoder.encEsq);
+  //Serial.println(encoder.encEsq);
 }
 void encDir(){
+  vDir+= 0.01;
   Encoder encoder;
   EEPROM.get(3,encoder);
   //encoder.encDir+=1.00;
@@ -195,7 +199,7 @@ void esqAx(int graus){
   
   int setPoint = graus/3;
   EEPROM.get(3,encoder);
-  while(391.304*encoder.encEsq < setPoint || 391.304*encoder.encDir < setPoint){
+  while(391.304*vEsq < setPoint || 391.304*vDir < setPoint){
     //int s = int(Serial.parseInt(SKIP_WHITESPACE));
     //if(s == 9) break;
     //Serial.println(encoder.encEsq);
@@ -233,7 +237,7 @@ void frente(int mm){
   EEPROM.put(3,encoder);
   int setPoint = mm/5;
   EEPROM.get(3,encoder);
-  while(encoder.encEsq <= setPoint || encoder.encDir <= setPoint){
+  while(100*vEsq <= setPoint || 100*vDir <= setPoint){
     //int s = int(Serial.parseInt(SKIP_WHITESPACE));
     //if(s == 9) break;
     digitalWrite(mA1, HIGH);
@@ -263,13 +267,14 @@ void setup() {
 }
 
 void loop() {
+  /*
   esqAx(90);
   delay(5000);
   dirAx(90);
   //int i = 5;
   //int caminho[] = {};
   //delay(1000);
-  /*
+  */
   while(Serial.available()> 0){
   double ab = Serial.parseInt(SKIP_WHITESPACE);
   double ord = Serial.parseInt(SKIP_WHITESPACE);
@@ -281,7 +286,7 @@ void loop() {
   pipf(ab,ord); 
   
   }
-  */  
+    
   //mover(0);
   
 }

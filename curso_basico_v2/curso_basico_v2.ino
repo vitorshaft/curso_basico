@@ -11,6 +11,18 @@ struct Coord{
   double y;
 };
 //pinos dos sensores dos encoders
+#define esq 3
+#define dir 2
+
+float vEsq = 0.00;
+float vDir = 0.00;
+
+void encEsq(){
+  vEsq+=0.01;
+}
+void encDir(){
+  vDir+=0.01;
+}
 
 void setup() {
   Serial.begin(9600);
@@ -24,58 +36,23 @@ void setup() {
   digitalWrite(mA2, LOW);
   digitalWrite(mB1, LOW);
   digitalWrite(mB2, LOW);
+  attachInterrupt(digitalPinToInterrupt(2),encDir,CHANGE);
+  attachInterrupt(digitalPinToInterrupt(3),encEsq,CHANGE);
+  
 }
 
 void loop() {
-  double xis;
-  double ips;
-  int i = 0;
-  /*
-  while(!Serial.available()){
-    
+  while(vEsq < 2.00){
+    digitalWrite(mA1, HIGH);
+    digitalWrite(mA2, LOW);
+    digitalWrite(mB1, HIGH);
+    digitalWrite(mB2, LOW);
+    Serial.println(vEsq);
   }
-  */
-  /*
-  digitalWrite(mA1, HIGH);
-  digitalWrite(mA2, LOW);
-  digitalWrite(mB1, HIGH);
-  digitalWrite(mB2, LOW);
-  delay(5000);
-
   digitalWrite(mA1, LOW);
   digitalWrite(mA2, LOW);
   digitalWrite(mB1, LOW);
   digitalWrite(mB2, LOW);
-  delay(2000);
-  */
-  Coord coord;
-  while(Serial.available()!=0){
-    /*
-    xis = Serial.parseInt();
-    a[i] = xis;
-    //Serial.println(a[i]);
-    i++;
-    for(int j = 0; j<sizeof(a); j++){
-      Serial.print(a[j]);
-    }
-    //ips = Serial.parseInt();
-    //Serial.println(ips);
-    */
-    coord.x = Serial.parseInt(SKIP_WHITESPACE);
-    coord.y = Serial.parseInt(SKIP_WHITESPACE);
-    Serial.print("X: ");
-    Serial.println(coord.x);
-    Serial.print("Y: ");
-    Serial.println(coord.y);
-    Serial.println(i);
-    i++;
-    
-  }
-  //delay(2000);
-  /*
-  if(Serial.available()!=0){
-    ips = Serial.parseInt();
-    Serial.println(ips);
-  }
-  */
+  delay(3000);
+  
 }

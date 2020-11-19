@@ -1,4 +1,4 @@
-//https://github.com/vitorshaft/roboMovel/raspMovelDC.ino
+//https://github.com/vitorshaft/curso_basico
 #include <SoftwareSerial.h> //biblioteca para configurar a comunicacao Serial
 #include <EEPROM.h> //biblioteca para armazenar dados na memória ROM
 #include <Coordinates.h>  //biblioteca para converter coordenadas
@@ -187,7 +187,7 @@ void esqAx(int graus){
    * AJUSTAR CONVERSÃO E ARMAZENAMENTO DE PULSOS
    * A EEPROM SÓ SALVA VALORES ENTRE 0 E 255
    */
-  Serial.println(graus);
+  //Serial.println(graus);
   delay(1000);
   Encoder encoder;
   
@@ -280,8 +280,8 @@ void loop() {
   double ord = Serial.parseInt(SKIP_WHITESPACE);
   ab = float(ab);
   ord = float(ord);
-  Serial.println(ab);
-  Serial.println(ord);
+  //Serial.println(ab);
+  //Serial.println(ord);
   delay(1000);
   pipf(ab,ord); 
   

@@ -13,12 +13,24 @@
   *  - Frente, trás, esquerda, direita
   *  - Odometria
   */
+
+#include <StaticThreadController.h>
+#include <Thread.h>
+#include <ThreadController.h>
 #include <Servo.h>
 Servo sonar;
 const int trig = 7;
 const int echo = 8;
 int cont = 0;
 int d;
+
+int contE = 0;
+int contD = 0;
+
+#define mA1 9
+#define mA2 10
+#define mB1 11
+#define mB2 12
 
 struct Radar{
   int az;
@@ -50,7 +62,7 @@ void girarSonar(){
   //Radar radar;
   int azim = 0;
   int d;
-  for(azim = 0; azim <= 180; azim+=10){
+  for(azim = 0; azim <= 180; azim+=30){
     sonar.write(azim);
     delay(30);
     d = medirDist();
@@ -68,6 +80,83 @@ void girarSonar(){
     delay(20);
   }
   */
+  int plot[2] = {azim,d};
+  return plot;
+}
+
+void encEsq(){
+  contE++;
+}
+void encDir(){
+  contD++;
+}
+
+void frente(int dist){ //distancia em cm
+  contE = 0;
+  contD = 0;
+  int pulsos = dist/5;
+  while(contE < pulsos || contD < pulsos){
+    digitalWrite(mA1, HIGH);
+    digitalWrite(mA2, LOW);
+    digitalWrite(mB1, HIGH);
+    digitalWrite(mB2, LOW);
+  }
+  digitalWrite(mA1, LOW);
+  digitalWrite(mA2, LOW);
+  digitalWrite(mB1, LOW);
+  digitalWrite(mB2, LOW);
+}
+void esqAx(int ang){
+  contE = 0;
+  contD = 0;
+  int pulsos = ang/8; //cada pulso representa 8° de rotação axial
+  while(contE < pulsos || contD < pulsos){
+    digitalWrite(mA1, HIGH);
+    digitalWrite(mA2, LOW);
+    digitalWrite(mB1, LOW);
+    digitalWrite(mB2, HIGH);
+  }
+  digitalWrite(mA1, LOW);
+  digitalWrite(mA2, LOW);
+  digitalWrite(mB1, LOW);
+  digitalWrite(mB2, LOW); 
+}
+void dirAx(int ang){
+  contE = 0;
+  contD = 0;
+  int pulsos = ang/8; //cada pulso representa 8° de rotação axial
+  while(contE < pulsos || contD < pulsos){
+    digitalWrite(mA1, LOW);
+    digitalWrite(mA2, HIGH);
+    digitalWrite(mB1, HIGH);
+    digitalWrite(mB2, LOW);
+  }
+  digitalWrite(mA1, LOW);
+  digitalWrite(mA2, LOW);
+  digitalWrite(mB1, LOW);
+  digitalWrite(mB2, LOW); 
+}
+void tras(int dist){
+  contE = 0;
+  contD = 0;
+  int pulsos = dist/5;
+  while(contE < pulsos || contD < pulsos){
+    digitalWrite(mA1, LOW);
+    digitalWrite(mA2, HIGH);
+    digitalWrite(mB1, LOW);
+    digitalWrite(mB2, HIGH);
+  }
+  digitalWrite(mA1, LOW);
+  digitalWrite(mA2, LOW);
+  digitalWrite(mB1, LOW);
+  digitalWrite(mB2, LOW);
+}
+void motores(int a,int b,int c,int d){  
+//funcao para facilitar controle dos motores de forma indefinida
+  digitalWrite(mA1, a);
+  digitalWrite(mA2, b);
+  digitalWrite(mB1, c);
+  digitalWrite(mB2, d);
 }
 
 void setup() {
@@ -75,24 +164,23 @@ void setup() {
   pinMode(echo, INPUT);
   sonar.attach(5);
   Serial.begin(9600);
-  
 
+  attachInterrupt(digitalPinToInterrupt(2),encEsq,CHANGE);
+  attachInterrupt(digitalPinToInterrupt(3),encDir,CHANGE);
+
+  pinMode(mA1,OUTPUT);
+  pinMode(mA2,OUTPUT);
+  pinMode(mB1,OUTPUT);
+  pinMode(mB2,OUTPUT);
 }
 
 void loop() {
   //Serial.println(medirDist());
   //medirDist();
-  
   //int azim = 0;
-  
-  for(int azim = 0; azim <= 180; azim+=10){
-    sonar.write(azim);
-    delay(30);
-    d = medirDist();
-    delay(500);
-    Serial.print("Angulo: ");
-    Serial.println(azim);
-    Serial.print("Distancia: ");
-    Serial.println(d);
+  //delay(500);
+  girarSonar();
+  while(medirDist() > 20){
+    
   }
 }

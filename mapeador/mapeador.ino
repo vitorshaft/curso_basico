@@ -86,6 +86,7 @@ void girarSonar(){
 
 void encEsq(){
   contE++;
+  //Serial.println(contE);
 }
 void encDir(){
   contD++;
@@ -96,6 +97,7 @@ void frente(int dist){ //distancia em cm
   contD = 0;
   int pulsos = dist/5;
   while(contE < pulsos || contD < pulsos){
+    Serial.println(contE);
     digitalWrite(mA1, HIGH);
     digitalWrite(mA2, LOW);
     digitalWrite(mB1, HIGH);
@@ -180,7 +182,10 @@ void loop() {
   //int azim = 0;
   //delay(500);
   girarSonar();
-  while(medirDist() > 20){
-    
+  sonar.write(80);
+  delay(1000);
+  if(medirDist() > 20){
+    Serial.println(medirDist());
+    frente(100);
   }
 }

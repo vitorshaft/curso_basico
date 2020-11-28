@@ -17,8 +17,11 @@
 #include <StaticThreadController.h>
 #include <Thread.h>
 #include <ThreadController.h>
+#include <SoftwareSerial.h> 
 #include <Servo.h>
+#include <Coordinates.h>
 
+SoftwareSerial bt(10,11); //RX e TX
 Servo sonar;
 const int trig = 7;
 const int echo = 8;
@@ -61,35 +64,18 @@ int medirDist(){  //Le a distancia pelo sensor ultrassonico e retorna em cm
   //retorna a distancia em cm
   return dist;
 }
-
-void girarSonar(){
-  //Radar radar;
-  int azim = 0;
-  int d;
-  for(azim = 0; azim <= 180; azim+=30){
-    sonar.write(azim);
-    delay(30);
-    d = medirDist();
-    scan[azim/30] = d;
-    delay(150);
-    Serial.print("Angulo: ");
-    Serial.println(azim);
-    Serial.print("Distancia: ");
-    Serial.println(d);
+int pos = 0;
+void girar(){
+  if(pos <= 180){
+    sonar.write(pos);
+    pos+=5;
   }
-  
-  /*
-  for(azim = 180; azim >= 0; azim-=1){
-    sonar.write(azim);
-    cp[0] = medirDist();
-    cp[1] = azim;
-    delay(20);
+  else{
+    pos = 0;
+    sonar.write(pos);
   }
-  
-  int plot[2] = {azim,d};
-  return plot;
-  */
 }
+
 
 void encEsq(){
   contE++;
@@ -99,83 +85,31 @@ void encDir(){
   contD++;
 }
 Thread andar;
-void varrer(){
+void mover(){
   //Seguir em frente (1m) enquanto a distancia no azim 90° não detectar nada em menos de 20 cm
   if(scan[3] > 20){
-    frente(100);
+    while(contE < 80 || contD < 80){
+      motores(1,0,1,0);
+    }
+    motores(0,0,0,0);
   }
   //Quando obstaculo detectado a menos de 20 cm:
   else{
     //Checar se direita (0°) bloqueada e girar a esquerda
     if(scan[0] < 20){
-      esqAx(90);
+      while(contE < 80 || contD < 80){
+      motores(1,0,0,1); //esquerda, duas voltas de roda
+    }
+    motores(0,0,0,0);
     }
     //Se direita livre, girar 90° direita
     else{
-      dirAx(90);
+      while(contE < 80 || contD < 80){
+      motores(0,1,1,0);
+    }
+    motores(0,0,0,0);
     }
   }
-}
-void frente(int dist){ //distancia em cm
-  contE = 0;
-  contD = 0;
-  int pulsos = dist/5;
-  while(contE < pulsos || contD < pulsos){
-    Serial.println(contE);
-    digitalWrite(mA1, HIGH);
-    digitalWrite(mA2, LOW);
-    digitalWrite(mB1, HIGH);
-    digitalWrite(mB2, LOW);
-  }
-  digitalWrite(mA1, LOW);
-  digitalWrite(mA2, LOW);
-  digitalWrite(mB1, LOW);
-  digitalWrite(mB2, LOW);
-}
-void esqAx(int ang){
-  contE = 0;
-  contD = 0;
-  int pulsos = ang/8; //cada pulso representa 8° de rotação axial
-  while(contE < pulsos || contD < pulsos){
-    digitalWrite(mA1, HIGH);
-    digitalWrite(mA2, LOW);
-    digitalWrite(mB1, LOW);
-    digitalWrite(mB2, HIGH);
-  }
-  digitalWrite(mA1, LOW);
-  digitalWrite(mA2, LOW);
-  digitalWrite(mB1, LOW);
-  digitalWrite(mB2, LOW); 
-}
-void dirAx(int ang){
-  contE = 0;
-  contD = 0;
-  int pulsos = ang/8; //cada pulso representa 8° de rotação axial
-  while(contE < pulsos || contD < pulsos){
-    digitalWrite(mA1, LOW);
-    digitalWrite(mA2, HIGH);
-    digitalWrite(mB1, HIGH);
-    digitalWrite(mB2, LOW);
-  }
-  digitalWrite(mA1, LOW);
-  digitalWrite(mA2, LOW);
-  digitalWrite(mB1, LOW);
-  digitalWrite(mB2, LOW); 
-}
-void tras(int dist){
-  contE = 0;
-  contD = 0;
-  int pulsos = dist/5;
-  while(contE < pulsos || contD < pulsos){
-    digitalWrite(mA1, LOW);
-    digitalWrite(mA2, HIGH);
-    digitalWrite(mB1, LOW);
-    digitalWrite(mB2, HIGH);
-  }
-  digitalWrite(mA1, LOW);
-  digitalWrite(mA2, LOW);
-  digitalWrite(mB1, LOW);
-  digitalWrite(mB2, LOW);
 }
 void motores(int a,int b,int c,int d){  
 //funcao para facilitar controle dos motores de forma indefinida
@@ -188,11 +122,27 @@ void motores(int a,int b,int c,int d){
   digitalWrite(mB2, d);
 }
 
+Thread plotar;
+int xis,ips = 0;
+Coordinates ponto = Coordinates();
+void cart(){
+  ponto.fromPolar(dist,pos);
+  xis = ponto.getX();
+  ips = ponto.getY();
+}
+void tx(){
+  bt.print(xis);
+  bt.print(ips);
+  Serial.print(xis);
+  Serial.println(ips);
+}
+
 void setup() {
   pinMode(trig, OUTPUT);
   pinMode(echo, INPUT);
   sonar.attach(5);
   Serial.begin(9600);
+  bt.begin(9600);
 
   attachInterrupt(digitalPinToInterrupt(2),encEsq,CHANGE);
   attachInterrupt(digitalPinToInterrupt(3),encDir,CHANGE);
@@ -202,30 +152,26 @@ void setup() {
   pinMode(mB1,OUTPUT);
   pinMode(mB2,OUTPUT);
 
-  mapear.setInterval(1500);
-  mapear.onRun(girarSonar);
+  mapear.setInterval(100);
+  mapear.onRun(girar);
+  mapear.onRun(medirDist);
+  
+  plotar.setInterval(500);
+  plotar.onRun(cart);
+  plotar.onRun(tx);
+  
   andar.setInterval(1000);
-  andar.onRun(varrer);
+  andar.onRun(mover);
 }
 
 void loop() {
   if(mapear.shouldRun()){
     mapear.run();
   }
+  if(plotar.shouldRun()){
+    plotar.run();
+  }
   if(andar.shouldRun()){
     andar.run();
   }
-  //Serial.println(medirDist());
-  //medirDist();
-  //int azim = 0;
-  //delay(500);
-  /*
-  girarSonar();
-  sonar.write(80);
-  delay(1000);
-  if(medirDist() > 20){
-    Serial.println(medirDist());
-    frente(100);
-  }
-  */
 }

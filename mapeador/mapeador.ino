@@ -13,10 +13,6 @@
   *  - Frente, trás, esquerda, direita
   *  - Odometria
   */
-
-#include <StaticThreadController.h>
-#include <Thread.h>
-#include <ThreadController.h>
 #include <Servo.h>
 Servo sonar;
 const int trig = 7;
@@ -37,51 +33,31 @@ struct Radar{
   int d;
 };
 
-int medirDist(){
+int dist;
+int medirDist(){  //Le a distancia pelo sensor ultrassonico e retorna em cm
   long duracao;
-  int dist;
-  // Clears the trigPin
+  // Inicia o trig desligado
   digitalWrite(trig, LOW);
   delayMicroseconds(2);
-  // Sets the trigPin on HIGH state for 10 micro seconds
+  // Aciona o trig por 10 microssegundos
   digitalWrite(trig, HIGH);
   delayMicroseconds(10);
   digitalWrite(trig, LOW);
-  // Reads the echoPin, returns the sound wave travel time in microseconds
+  // Le o echo e retorna o tempo de viagem da onda de ultrassom
   duracao = pulseIn(echo, HIGH);
-  // Calculating the distance
+  // Calculo da dsitancia
   dist= duracao*0.034/2;
-  // Prints the distance on the Serial Monitor
+  // Limitamos a leitura a 1m (100 cm)
   if(dist > 100){
     dist = 100;
   }
-  return dist;
+  //return dist;
 }
 
-void girarSonar(){
-  //Radar radar;
-  int azim = 0;
-  int d;
-  for(azim = 0; azim <= 180; azim+=30){
-    sonar.write(azim);
-    delay(30);
-    d = medirDist();
-    delay(500);
-    Serial.print("Angulo: ");
-    Serial.println(azim);
-    Serial.print("Distancia: ");
-    Serial.println(d);
-  }
-  /*
-  for(azim = 180; azim >= 0; azim-=1){
-    sonar.write(azim);
-    cp[0] = medirDist();
-    cp[1] = azim;
-    delay(20);
-  }
-  */
-  int plot[2] = {azim,d};
-  return plot;
+int alfa;
+void girar(int ang){
+  sonar.write(ang);
+  delay(30);
 }
 
 void encEsq(){
@@ -92,73 +68,13 @@ void encDir(){
   contD++;
 }
 
-void frente(int dist){ //distancia em cm
-  contE = 0;
-  contD = 0;
-  int pulsos = dist/5;
-  while(contE < pulsos || contD < pulsos){
-    Serial.println(contE);
-    digitalWrite(mA1, HIGH);
-    digitalWrite(mA2, LOW);
-    digitalWrite(mB1, HIGH);
-    digitalWrite(mB2, LOW);
-  }
-  digitalWrite(mA1, LOW);
-  digitalWrite(mA2, LOW);
-  digitalWrite(mB1, LOW);
-  digitalWrite(mB2, LOW);
-}
-void esqAx(int ang){
-  contE = 0;
-  contD = 0;
-  int pulsos = ang/8; //cada pulso representa 8° de rotação axial
-  while(contE < pulsos || contD < pulsos){
-    digitalWrite(mA1, HIGH);
-    digitalWrite(mA2, LOW);
-    digitalWrite(mB1, LOW);
-    digitalWrite(mB2, HIGH);
-  }
-  digitalWrite(mA1, LOW);
-  digitalWrite(mA2, LOW);
-  digitalWrite(mB1, LOW);
-  digitalWrite(mB2, LOW); 
-}
-void dirAx(int ang){
-  contE = 0;
-  contD = 0;
-  int pulsos = ang/8; //cada pulso representa 8° de rotação axial
-  while(contE < pulsos || contD < pulsos){
-    digitalWrite(mA1, LOW);
-    digitalWrite(mA2, HIGH);
-    digitalWrite(mB1, HIGH);
-    digitalWrite(mB2, LOW);
-  }
-  digitalWrite(mA1, LOW);
-  digitalWrite(mA2, LOW);
-  digitalWrite(mB1, LOW);
-  digitalWrite(mB2, LOW); 
-}
-void tras(int dist){
-  contE = 0;
-  contD = 0;
-  int pulsos = dist/5;
-  while(contE < pulsos || contD < pulsos){
-    digitalWrite(mA1, LOW);
-    digitalWrite(mA2, HIGH);
-    digitalWrite(mB1, LOW);
-    digitalWrite(mB2, HIGH);
-  }
-  digitalWrite(mA1, LOW);
-  digitalWrite(mA2, LOW);
-  digitalWrite(mB1, LOW);
-  digitalWrite(mB2, LOW);
-}
+
 void motores(int a,int b,int c,int d){  
 //funcao para facilitar controle dos motores de forma indefinida
-  digitalWrite(mA1, a);
-  digitalWrite(mA2, b);
-  digitalWrite(mB1, c);
-  digitalWrite(mB2, d);
+  analogWrite(mA1, a);
+  analogWrite(mA2, b);
+  analogWrite(mB1, c);
+  analogWrite(mB2, d);
 }
 
 void setup() {
@@ -177,15 +93,28 @@ void setup() {
 }
 
 void loop() {
-  //Serial.println(medirDist());
-  //medirDist();
-  //int azim = 0;
-  //delay(500);
-  girarSonar();
-  sonar.write(80);
-  delay(1000);
-  if(medirDist() > 20){
-    Serial.println(medirDist());
-    frente(100);
+  /*
+  if(alfa < 160){
+    girar(alfa);
+    alfa+=30;
   }
+  else{
+    alfa = 0;
+    girar(alfa);
+  }
+  */
+  medirDist();
+  /*
+  if(dist > 20){
+    motores(150,0,150,0);
+  }
+  else{
+    motores(0,0,0,0);
+  }
+  */
+  Serial.print("Dist/ang: ");
+  Serial.print(dist);
+  Serial.print(", ");
+  Serial.println(alfa);
+  delay(500);
 }

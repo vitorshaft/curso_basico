@@ -61,8 +61,9 @@ int medirDist(){  //Le a distancia pelo sensor ultrassonico e retorna em cm
   if(dist > 100){
     dist = 100;
   }
+  Serial.println(dist);
   //retorna a distancia em cm
-  return dist;
+  //return dist;
 }
 int pos = 0;
 void girar(){
@@ -89,7 +90,7 @@ void mover(){
   //Seguir em frente (1m) enquanto a distancia no azim 90° não detectar nada em menos de 20 cm
   if(scan[3] > 20){
     while(contE < 80 || contD < 80){
-      motores(1,0,1,0);
+      motores(150,0,150,0);
     }
     motores(0,0,0,0);
   }
@@ -98,14 +99,14 @@ void mover(){
     //Checar se direita (0°) bloqueada e girar a esquerda
     if(scan[0] < 20){
       while(contE < 80 || contD < 80){
-      motores(1,0,0,1); //esquerda, duas voltas de roda
+      motores(150,0,0,150); //esquerda, duas voltas de roda
     }
     motores(0,0,0,0);
     }
     //Se direita livre, girar 90° direita
     else{
       while(contE < 80 || contD < 80){
-      motores(0,1,1,0);
+      motores(0,150,150,0);
     }
     motores(0,0,0,0);
     }
@@ -116,10 +117,16 @@ void motores(int a,int b,int c,int d){
   //zera os encoders
   contE = 0;
   contD = 0;
+  /*
   digitalWrite(mA1, a);
   digitalWrite(mA2, b);
   digitalWrite(mB1, c);
   digitalWrite(mB2, d);
+  */
+  analogWrite(mA1, a);
+  analogWrite(mA2, b);
+  analogWrite(mB1, c);
+  analogWrite(mB2, d);
 }
 
 Thread plotar;
@@ -142,7 +149,7 @@ void setup() {
   pinMode(echo, INPUT);
   sonar.attach(5);
   Serial.begin(9600);
-  bt.begin(9600);
+  //bt.begin(9600);
 
   attachInterrupt(digitalPinToInterrupt(2),encEsq,CHANGE);
   attachInterrupt(digitalPinToInterrupt(3),encDir,CHANGE);
@@ -152,26 +159,36 @@ void setup() {
   pinMode(mB1,OUTPUT);
   pinMode(mB2,OUTPUT);
 
-  mapear.setInterval(100);
+  mapear.setInterval(500);
   mapear.onRun(girar);
   mapear.onRun(medirDist);
   
   plotar.setInterval(500);
   plotar.onRun(cart);
-  plotar.onRun(tx);
+  //plotar.onRun(tx);
   
-  andar.setInterval(1000);
-  andar.onRun(mover);
+  //andar.setInterval(1000);
+  //andar.onRun(mover);
 }
 
 void loop() {
+  /*SERVOMOTOR GERANDO INTERFERÊNCIA:
+   * a) Usar varredura com motores das rodas
+   * b) só retornar leituras válidas
+   */
+  
   if(mapear.shouldRun()){
     mapear.run();
+    //mapear.runned();
   }
   if(plotar.shouldRun()){
     plotar.run();
+    //plotar.runned();
   }
-  if(andar.shouldRun()){
+  /*if(andar.shouldRun()){
     andar.run();
   }
+  */
+  motores(0,0,0,0);
+  //Serial.println(dist);
 }

@@ -21,7 +21,7 @@
 #include <Servo.h>
 #include <Coordinates.h>
 
-SoftwareSerial bt(10,11); //RX e TX
+SoftwareSerial bt(5,6); //RX e TX
 Servo sonar;
 const int trig = 7;
 const int echo = 8;
@@ -147,7 +147,7 @@ void tx(){
 void setup() {
   pinMode(trig, OUTPUT);
   pinMode(echo, INPUT);
-  sonar.attach(5);
+  sonar.attach(4);
   Serial.begin(9600);
   //bt.begin(9600);
 
@@ -172,7 +172,7 @@ void setup() {
 }
 
 void loop() {
-  /*SERVOMOTOR GERANDO INTERFERÊNCIA:
+  /* 1. Protoboard/jumpers com defeito
    * a) Usar varredura com motores das rodas
    * b) só retornar leituras válidas
    */

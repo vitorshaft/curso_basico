@@ -1,9 +1,10 @@
-const int trig = 7;
-const int echo = 8;
+const int trig = 12;
+const int echo = 13;
 
 int dist;
+long duracao;
 int medirDist(){  //Le a distancia pelo sensor ultrassonico e retorna em cm
-  long duracao;
+  //long duracao;
   // Inicia o trig desligado
   digitalWrite(trig, LOW);
   delayMicroseconds(2);
@@ -25,21 +26,15 @@ int medirDist(){  //Le a distancia pelo sensor ultrassonico e retorna em cm
 void setup() {
   pinMode(trig, OUTPUT);
   pinMode(echo, INPUT);
-  pinMode(13,OUTPUT);
-  Serial.begin(9600);
+  pinMode(11,OUTPUT);
+  digitalWrite(11, HIGH);
+  Serial.begin(115200);
 }
 
 void loop() {
   medirDist();
-  
   if(dist < 100){
     Serial.println(dist);
-    if(dist > 10){
-      digitalWrite(13,HIGH);
-    }
-    else{
-      digitalWrite(13,LOW);
-    }
   }
-  delay(500);
+  delay(200);
 }
